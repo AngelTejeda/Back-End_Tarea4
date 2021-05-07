@@ -9,6 +9,7 @@ namespace Tarea_4.Models
     public class Pagination<T> where T : class
     {
         public int? PreviousPage { get; set; }
+        public int? CurrentPage { get; set; }
         public int? NextPage { get; set; }
         public List<T> ResponseList { get; set; }
 
@@ -17,9 +18,10 @@ namespace Tarea_4.Models
 
         }
 
-        public Pagination(int? previousPage, int? nextPage, List<T> responseList)
+        public Pagination(int? previousPage, int? currentPage, int? nextPage, List<T> responseList)
         {
             PreviousPage = previousPage;
+            CurrentPage = currentPage;
             NextPage = nextPage;
             ResponseList = responseList;
         }

@@ -46,13 +46,23 @@ namespace API_Rest.Controllers
             const int elementsPerPage = 10;
             Pagination<EmployeePersonalInfoDTO> response = new();
 
-            response.PreviousPage = page - 1;
-            response.NextPage = page + 1;
-
             List<EmployeePersonalInfoDTO> employees = new();
             using (NorthwindContext dbContext = new())
             {
-                if (page * elementsPerPage > EmployeeSC.CountEmployees(dbContext))
+                int totalElements = EmployeeSC.CountEmployees(dbContext);
+                int maxPage = Convert.ToInt32(Math.Ceiling((double)totalElements / elementsPerPage));
+
+                if (page < 1)
+                    BadRequest();
+
+                if (page > maxPage)
+                    page = maxPage;
+
+                response.PreviousPage = page - 1;
+                response.CurrentPage = page;
+                response.NextPage = page + 1;
+
+                if (page == maxPage)
                     response.NextPage = null;
 
                 if (page == 1)
