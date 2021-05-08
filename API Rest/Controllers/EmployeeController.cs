@@ -40,16 +40,16 @@ namespace API_Rest.Controllers
 
         // GET: api/<EmployeeController>/page/{page}
         [HttpGet]
-        [Route("page/{page}")]
-        public IActionResult GetPage(int page)
+        [Route("pages/{requestedPage}")]
+        public IActionResult GetPage(int requestedPage)
         {
             const int elementsPerPage = 10;
 
-            if (page < 1)
-                return BadRequest($"{nameof(page)} must be at least 1.");
+            if (requestedPage < 1)
+                return BadRequest($"{nameof(requestedPage)} must be at least 1.");
 
             int lastPage = new EmployeeSC().CalculateLastPage(elementsPerPage);
-            Pagination<EmployeePersonalInfoDTO> response = new(page, lastPage);
+            Pagination<EmployeePersonalInfoDTO> response = new(requestedPage, lastPage);
 
             IQueryable<Employee> dbEmployees = new EmployeeSC().GetPage(elementsPerPage, response.CurrentPage);
             List<EmployeePersonalInfoDTO> employees = EmployeeSC.MaterializeIQueryable<EmployeePersonalInfoDTO>(dbEmployees);
@@ -89,6 +89,7 @@ namespace API_Rest.Controllers
                 return InternalServerError();
             }
 
+            //return Created(id);
             return Ok(id);
         }
 
@@ -143,6 +144,7 @@ namespace API_Rest.Controllers
                 return InternalServerError();
             }
 
+            //return Deleted();
             return NoContent();
         }
     }
