@@ -12,20 +12,9 @@ namespace Tarea_4.Models
 
         }
 
-        public EmployeePersonalInfoDTO(string name, string familyName, int id, string homeAddress)
+        public EmployeePersonalInfoDTO(Employee dataBaseEmployee)
         {
-            Name = name;
-            FamilyName = familyName;
-            Id = id;
-            HomeAddress = homeAddress;
-        }
-
-        public EmployeePersonalInfoDTO(Employee employee)
-        {
-            Name = employee.FirstName;
-            FamilyName = employee.LastName;
-            Id = employee.EmployeeId;
-            HomeAddress = employee.Address;
+            CopyInfoFromDataBaseEmployee(dataBaseEmployee);
         }
 
         public override Employee GetDataBaseEmployeeObject()
@@ -45,6 +34,14 @@ namespace Tarea_4.Models
             dataBaseEmployee.LastName = FamilyName;
             dataBaseEmployee.EmployeeId = Id;
             dataBaseEmployee.Address = HomeAddress;
+        }
+
+        public override void CopyInfoFromDataBaseEmployee(Employee dataBaseEmployee)
+        {
+            Name = dataBaseEmployee.FirstName;
+            FamilyName = dataBaseEmployee.LastName;
+            Id = dataBaseEmployee.EmployeeId;
+            HomeAddress = dataBaseEmployee.Address;
         }
     }
 }

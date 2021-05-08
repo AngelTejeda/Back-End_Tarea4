@@ -9,5 +9,6 @@ namespace Tarea_4.Models
 
         public abstract Employee GetDataBaseEmployeeObject();
         public abstract void ModifyDataBaseEmployee(Employee dataBaseEmployee);
+        public abstract void CopyInfoFromDataBaseEmployee(Employee dataBaseEmployee);
     }
 }

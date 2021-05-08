@@ -13,22 +13,9 @@ namespace Tarea_4.Models
 
         }
 
-        public CustomerContactInfoDTO(string id, string company, string contactFullName, string contactPosition, string contactPhone)
+        public CustomerContactInfoDTO(Customer dataBaseCustomer)
         {
-            Id = id;
-            Company = company;
-            ContactFullName = contactFullName;
-            ContactPosition = contactPosition;
-            ContactPhone = contactPhone;
-        }
-
-        public CustomerContactInfoDTO(Customer customer)
-        {
-            Id = customer.CustomerId;
-            Company = customer.CompanyName;
-            ContactFullName = customer.ContactName;
-            ContactPosition = customer.ContactTitle;
-            ContactPhone = customer.Phone;
+            CopyInfoFromDataBaseCustomer(dataBaseCustomer);
         }
 
         public override Customer GetDataBaseCustomerObject()
@@ -50,6 +37,15 @@ namespace Tarea_4.Models
             dataBaseCustomer.ContactName = ContactFullName;
             dataBaseCustomer.ContactTitle = ContactPosition;
             dataBaseCustomer.Phone = ContactPhone;
+        }
+
+        public override void CopyInfoFromDataBaseCustomer(Customer dataBaseCustomer)
+        {
+            Id = dataBaseCustomer.CustomerId;
+            Company = dataBaseCustomer.CompanyName;
+            ContactFullName = dataBaseCustomer.ContactName;
+            ContactPosition = dataBaseCustomer.ContactTitle;
+            ContactPhone = dataBaseCustomer.Phone;
         }
     }
 }

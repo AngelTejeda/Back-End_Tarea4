@@ -9,5 +9,6 @@ namespace Tarea_4.Models
 
         public abstract Product GetDataBaseProductObject();
         public abstract void ModifyDataBaseProduct(Product dataBaseProduct);
+        public abstract void CopyInfoFromDataBaseProduct(Product dataBaseProduct);
     }
 }

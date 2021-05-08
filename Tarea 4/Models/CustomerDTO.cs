@@ -9,5 +9,6 @@ namespace Tarea_4.Models
 
         public abstract Customer GetDataBaseCustomerObject();
         public abstract void ModifyDataBaseCustomer(Customer dataBaseCustomer);
+        public abstract void CopyInfoFromDataBaseCustomer(Customer dataBaseCustomer);
     }
 }

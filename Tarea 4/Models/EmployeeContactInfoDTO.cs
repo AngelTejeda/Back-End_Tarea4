@@ -14,22 +14,9 @@ namespace Tarea_4.Models
 
         }
 
-        public EmployeeContactInfoDTO(string homeAddress, string homeCity, string countryland, string phoneNumber)
+        public EmployeeContactInfoDTO(Employee dataBaseEmployee)
         {
-            HomeAddress = homeAddress;
-            HomeCity = homeCity;
-            Countryland = countryland;
-            PhoneNumber = phoneNumber;
-        }
-
-        public EmployeeContactInfoDTO(Employee employee)
-        {
-            Name = employee.FirstName;
-            FamilyName = employee.LastName;
-            HomeAddress = employee.Address;
-            HomeCity = employee.City;
-            Countryland = employee.Country;
-            PhoneNumber = employee.HomePhone;
+            CopyInfoFromDataBaseEmployee(dataBaseEmployee);
         }
 
         public override Employee GetDataBaseEmployeeObject()
@@ -53,6 +40,16 @@ namespace Tarea_4.Models
             dataBaseEmployee.City = HomeCity;
             dataBaseEmployee.Country = Countryland;
             dataBaseEmployee.HomePhone = PhoneNumber;
+        }
+
+        public override void CopyInfoFromDataBaseEmployee(Employee dataBaseEmployee)
+        {
+            Name = dataBaseEmployee.FirstName;
+            FamilyName = dataBaseEmployee.LastName;
+            HomeAddress = dataBaseEmployee.Address;
+            HomeCity = dataBaseEmployee.City;
+            Countryland = dataBaseEmployee.Country;
+            PhoneNumber = dataBaseEmployee.HomePhone;
         }
     }
 }

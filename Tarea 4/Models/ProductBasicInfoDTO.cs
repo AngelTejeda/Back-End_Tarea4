@@ -10,18 +10,10 @@ namespace Tarea_4.Models
         {
 
         }
-        public ProductBasicInfoDTO(string name, bool isDiscontinued, decimal price)
-        {
-            Name = name;
-            IsDiscontinued = isDiscontinued;
-            Price = price;
-        }
 
-        public ProductBasicInfoDTO(Product product)
+        public ProductBasicInfoDTO(Product dataBaseProduct)
         {
-            Name = product.ProductName;
-            IsDiscontinued = product.Discontinued;
-            Price = product.UnitPrice;
+            CopyInfoFromDataBaseProduct(dataBaseProduct);
         }
 
         public override Product GetDataBaseProductObject()
@@ -39,6 +31,13 @@ namespace Tarea_4.Models
             dataBaseProduct.ProductName = Name;
             dataBaseProduct.Discontinued = IsDiscontinued;
             dataBaseProduct.UnitPrice = Price;
+        }
+
+        public override void CopyInfoFromDataBaseProduct(Product dataBaseProduct)
+        {
+            Name = dataBaseProduct.ProductName;
+            IsDiscontinued = dataBaseProduct.Discontinued;
+            Price = dataBaseProduct.UnitPrice;
         }
     }
 }
