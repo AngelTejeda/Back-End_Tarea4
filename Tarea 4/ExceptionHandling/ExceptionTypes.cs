@@ -12,11 +12,5 @@ namespace Tarea_4.BackEnd
                 && ex.InnerException != null
                 && ex.InnerException is SqlException;
         }
-
-        public static bool IsDbException(Exception ex)
-        {
-            return ex is DbUpdateConcurrencyException
-                || ex is DbUpdateException;
-        }
     }
 }

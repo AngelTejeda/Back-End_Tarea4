@@ -1,10 +1,13 @@
-﻿using Tarea_4.DataAccess;
+﻿using System.ComponentModel.DataAnnotations;
+using Tarea_4.DataAccess;
 
 namespace Tarea_4.Models
 {
     public class EmployeePersonalInfoDTO : EmployeeDTO
     {
         public int Id { get; set; }
+
+        [StringLength(60)]
         public string HomeAddress { get; set; }
 
         public EmployeePersonalInfoDTO()

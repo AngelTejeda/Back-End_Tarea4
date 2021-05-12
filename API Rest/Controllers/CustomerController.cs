@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Tarea_4;
 using Tarea_4.BackEnd;
 using Tarea_4.DataAccess;
 using Tarea_4.Models;
+using Tarea_4.ActionFilters;
+using Tarea_4.ExceptionHandling;
+using Microsoft.Data.SqlClient;
 
 namespace API_Rest.Controllers
 {
@@ -14,51 +17,54 @@ namespace API_Rest.Controllers
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private IActionResult InternalServerError(Exception ex)
+        // GET api/<CustomerController>/{id}
+        [HttpGet("{id}")]
+        public IActionResult Get(string id)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            // Get Customer from Database
+            Customer dbCustomer = new CustomerSC().GetCustomerById(id);
+
+            if (dbCustomer == null)
+                return NotFound();
+
+            CustomerContactInfoDTO customer = new(dbCustomer);
+
+            return Ok(customer);
+        }
+
+        // GET: api/<CustomerController>/page/{page}
+        [HttpGet]
+        [Route("pages/{requestedPage}")]
+        public IActionResult GetPage(int requestedPage)
+        {
+            const int elementsPerPage = 10;
+
+            if (requestedPage < 1)
+                return BadRequest($"{nameof(requestedPage)} must be at least 1.");
+
+            // Calculate Pages
+            int lastPage = new CustomerSC().CalculateLastPage(elementsPerPage);
+            Pagination<CustomerContactInfoDTO> response = new(requestedPage, lastPage);
+
+            // Get Selected Page
+            IQueryable<Customer> dbCustomers = new CustomerSC().GetPage(elementsPerPage, response.CurrentPage);
+            List<CustomerContactInfoDTO> customers = CustomerSC.MaterializeIQueryable<CustomerContactInfoDTO>(dbCustomers);
+
+            // Attach elements of the page to the response
+            response.ResponseList = customers;
+
+            return Ok(response);
         }
 
         // GET: api/<CustomerController>
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult GetAll()
         {
-            List<CustomerContactInfoDTO> customers = new();
+            IQueryable<Customer> dbCustomers = new CustomerSC().GetAllCustomers();
 
-            using (NorthwindContext dbContext = new())
-            {
-                IQueryable<Customer> dbCustomers = CustomerSC.GetAllCustomers(dbContext).AsNoTracking();
-
-                foreach (Customer dbCustomer in dbCustomers)
-                {
-                    customers.Add(new CustomerContactInfoDTO(dbCustomer));
-                };
-            }
+            List<CustomerContactInfoDTO> customers = CustomerSC.MaterializeIQueryable<CustomerContactInfoDTO>(dbCustomers);
 
             return Ok(customers);
-        }
-
-        // GET api/<CustomerController>/5
-        [HttpGet("{id}")]
-        public IActionResult Get(string id)
-        {
-            try
-            {
-                CustomerContactInfoDTO customer;
-
-                using (NorthwindContext dbContext = new())
-                {
-                    Customer dbCustomer = CustomerSC.GetCustomerById(dbContext, id);
-
-                    customer = new(dbCustomer);
-                }
-
-                return Ok(customer);
-            }
-            catch (Exception ex)
-            {
-                return InternalServerError(ex);
-            }
         }
 
         // POST api/<CustomerController>
@@ -69,55 +75,73 @@ namespace API_Rest.Controllers
 
             try
             {
-                using (NorthwindContext dbContext = new())
-                {
-                    id = CustomerSC.AddNewCustomer(dbContext, newCustomer);
-                }
-
-                return Ok("Registered Id: " + id);
+                id = new CustomerSC().AddNewCustomer(newCustomer);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return InternalServerError(ex);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if (message != null)
+                    return Conflict(message);
+
+                throw;
             }
+
+            return Created("GET " + Request.Path.Value + "/" + id, id);
         }
 
-        // PUT api/<CustomerController>/5
+        // PUT api/<CustomerController>/{id}
         [HttpPut("{id}")]
+        //[CustomerPersonalInfo_EnsureMatchingIds]
         public IActionResult Put(string id, [FromBody] CustomerContactInfoDTO modifiedCustomer)
         {
+            Customer dataBaseCustomer = new CustomerSC().GetCustomerById(id);
+
+            if (dataBaseCustomer == null)
+                return NotFound();
+
             try
             {
-                using (NorthwindContext dbContext = new())
-                {
-                    CustomerSC.UpdateCustomer(dbContext, id, modifiedCustomer);
-                }
-
-                return Ok();
+                //TODO: Check if it is possible to pass the dataBaseCustomer insted of the id.
+                new CustomerSC().UpdateCustomer(id, modifiedCustomer);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return InternalServerError(ex);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if (message != null)
+                    return Conflict(message);
+
+                throw;
             }
+
+            return NoContent();
         }
 
-        // DELETE api/<CustomerController>/5
+        // DELETE api/<CustomerController>/{id}
         [HttpDelete("{id}")]
         public IActionResult Delete(string id)
         {
+            Customer dataBaseCustomer = new CustomerSC().GetCustomerById(id);
+
+            if (dataBaseCustomer == null)
+                return NotFound();
+
             try
             {
-                using (NorthwindContext dbContext = new())
-                {
-                    CustomerSC.DeleteCustomer(dbContext, id);
-                }
-
-                return Ok();
+                new CustomerSC().DeleteCustomer(dataBaseCustomer);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return InternalServerError(ex);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if (message != null)
+                    return Conflict(message);
+
+                throw;
             }
+
+            return NoContent();
         }
     }
 }

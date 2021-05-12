@@ -1,103 +1,182 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Tarea_4.DataAccess;
 using Tarea_4.Models;
 
 namespace Tarea_4.BackEnd
 {
-    public static class ProductSC
+    public class ProductSC : BaseSC
     {
-        private static readonly string InstanceName = "product";
+        /// <summary>
+        /// Materializes a given IQueryable of products into a List.
+        /// </summary>
+        /// <typeparam name="T"> A Data Transfer Object Class of the products.</typeparam>
+        /// <param name="dataBaseProducts">IQueryable object of the products that will be materialized.</param>
+        /// <returns>A List<typeparamref name="T"/> with the materialized products.</returns>
+        public static List<T> MaterializeIQueryable<T>(IQueryable<Product> dataBaseProducts) where T : ProductDTO, new()
+        {
+            List<T> products = new();
 
-        public static IQueryable<Product> GetAllProducts(NorthwindContext dbContext)
+            dataBaseProducts = dataBaseProducts.AsNoTracking();
+
+            foreach (Product dbProduct in dataBaseProducts)
+            {
+                T dtoObject = new();
+                dtoObject.CopyInfoFromDataBaseProduct(dbProduct);
+
+                products.Add(dtoObject);
+            };
+
+            return products;
+        }
+
+        /// <summary>
+        /// Returns the total amount of products in the DataBase.
+        /// </summary>
+        /// <returns>The total amount of products in the DataBase.</returns>
+        public int CountProducts()
+        {
+            return GetAllProducts().Count();
+        }
+
+        /// <summary>
+        /// Gets the product with the specified id.
+        /// </summary>
+        /// <param name="id">Id of the product.</param>
+        /// <returns>The product object or null if <paramref name="id"/> doesn't exist.</returns>
+        public Product GetProductById(int id)
+        {
+            return GetAllProducts().FirstOrDefault(product => product.ProductId == id);
+        }
+
+        /// <summary>
+        /// Given a certain number of elements per page, calculates the number of the last page.
+        /// </summary>
+        /// <param name="elementsPerPage">Maximum number of elements that contains a page.</param>
+        /// <returns>The value of the last page.</returns>
+        public int CalculateLastPage(int elementsPerPage)
+        {
+            int totalElements = CountProducts();
+            int lastPage = Convert.ToInt32(Math.Ceiling((double)totalElements / elementsPerPage));
+
+            return lastPage;
+        }
+
+        /// <summary>
+        /// Returns only the specified amount of products in a certain page.
+        /// The number of pages is calculated with the total amount of products and the number of products per page.
+        /// The pages start at 1.
+        /// </summary>
+        /// <param name="elementsPerPage">The number of products in a page.</param>
+        /// <param name="page">The number of the page that will be retrieved.</param>
+        /// <returns>An IQueryable with the selected products.</returns>
+        public IQueryable<Product> GetPage(int elementsPerPage, int page)
+        {
+            if (elementsPerPage <= 0)
+                throw new ArgumentOutOfRangeException(nameof(elementsPerPage));
+
+            if (page <= 0)
+                throw new ArgumentOutOfRangeException(nameof(page));
+
+            return GetAllProducts()
+                .Skip((page - 1) * elementsPerPage)
+                .Take(elementsPerPage);
+        }
+
+        /// <summary>
+        /// Returns an IQueryable of all the products in the DataBase.
+        /// </summary>
+        public IQueryable<Product> GetAllProducts()
         {
             return dbContext.Products.AsQueryable();
         }
 
-        public static Product GetProductById(NorthwindContext dbContext, int id)
+        /// <summary>
+        /// Add a new record of an product to the DataBase.
+        /// </summary>
+        /// <param name="newProduct">Model of the product being registered.</param>
+        /// <returns>The id of the registered product.</returns>
+        public int AddNewProduct(ProductDTO newProduct)
         {
-            try
-            {
-                return GetAllProducts(dbContext).First(product => product.ProductId == id);
-            }
-            catch (ArgumentNullException ex)
-            {
-                ex.SetMessage(DbExceptionMessages.FieldIsRequired("id"));
-                throw;
-            }
-            catch (InvalidOperationException ex)
-            {
-                ex.SetMessage(DbExceptionMessages.InstanceNotFound(InstanceName, id));
-                throw;
-            }
+            if (newProduct == null)
+                throw new ArgumentNullException(nameof(newProduct));
+
+            Product dataBaseProduct = newProduct.GetDataBaseProductObject();
+
+            dbContext.Products.Add(dataBaseProduct);
+            dbContext.SaveChanges();
+
+            return dataBaseProduct.ProductId;
         }
 
-        public static int AddNewProduct(NorthwindContext dbContext, ProductDTO newProduct)
+        /// <summary>
+        /// Modifies the information of an product in the DataBase.
+        /// </summary>
+        /// <param name="id">Id of the product being modified.</param>
+        /// <param name="modifiedProduct">Model with the new information of the product.</param>
+        public void UpdateProduct(int id, ProductDTO modifiedProduct)
         {
-            try
-            {
-                Product dataBaseProduct = newProduct.GetDataBaseProductObject();
+            if (modifiedProduct == null)
+                throw new ArgumentNullException(nameof(modifiedProduct));
 
-                dbContext.Products.Add(dataBaseProduct);
-                dbContext.SaveChanges();
+            Product dataBaseProduct = GetProductById(id);
 
-                return dataBaseProduct.ProductId;
-            }
-            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
-            {
-                ex.SetMessage(DbExceptionMessages.FailedToAdd(InstanceName, ex.InnerException));
-                throw;
-            }
-            catch (Exception ex) when (ExceptionTypes.IsDbException(ex))
-            {
-                ex.SetMessage(DbExceptionMessages.UnexpectedFailure(ex));
-                throw;
-            }
+            if (dataBaseProduct == null)
+                throw new KeyNotFoundException();
 
+            modifiedProduct.ModifyDataBaseProduct(dataBaseProduct);
+
+            dbContext.SaveChanges();
         }
 
-        public static void UpdateProduct(NorthwindContext dbContext, int id, ProductDTO modifiedProduct)
+        /// <summary>
+        /// Modifies the information of an product in the DataBase.
+        /// </summary>
+        /// <param name="dataBaseProduct">Product object in the DataBase.</param>
+        /// <param name="modifiedProduct">Model with the new information of the product.</param>
+        public void UpdateProduct(Product dataBaseProduct, ProductDTO modifiedProduct)
         {
-            try
-            {
-                Product dataBaseProduct = GetProductById(dbContext, id);
+            if (dataBaseProduct == null)
+                throw new ArgumentNullException(nameof(dataBaseProduct));
 
-                modifiedProduct.ModifyDataBaseProduct(dataBaseProduct);
+            if (modifiedProduct == null)
+                throw new ArgumentNullException(nameof(modifiedProduct));
 
-                dbContext.SaveChanges();
-            }
-            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
-            {
-                ex.SetMessage(DbExceptionMessages.FailedToUpdate(InstanceName, id, ex.InnerException));
-                throw;
-            }
-            catch (Exception ex) when (ExceptionTypes.IsDbException(ex))
-            {
-                ex.SetMessage(DbExceptionMessages.UnexpectedFailure(ex));
-                throw;
-            }
+            modifiedProduct.ModifyDataBaseProduct(dataBaseProduct);
+
+            dbContext.SaveChanges();
         }
 
-        public static void DeleteProduct(NorthwindContext dbContext, int id)
+        /// <summary>
+        /// Deletes the record of an product in the DataBase.
+        /// </summary>
+        /// <param name="id">Id of the product being removed.</param>
+        public void DeleteProduct(int id)
         {
-            try
-            {
-                Product dataBaseProduct = GetProductById(dbContext, id);
+            Product dataBaseProduct = GetProductById(id);
 
-                dbContext.Products.Remove(dataBaseProduct);
+            if (dataBaseProduct == null)
+                throw new KeyNotFoundException();
 
-                dbContext.SaveChanges();
-            }
-            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
-            {
-                ex.SetMessage(DbExceptionMessages.FailedToDelete(InstanceName, id, ex.InnerException));
-                throw;
-            }
-            catch (Exception ex) when (ExceptionTypes.IsDbException(ex))
-            {
-                ex.SetMessage(DbExceptionMessages.UnexpectedFailure(ex));
-                throw;
-            }
+            dbContext.Products.Remove(dataBaseProduct);
+
+            dbContext.SaveChanges();
+        }
+
+        /// <summary>
+        /// Deletes the record of an product in the DataBase.
+        /// </summary>
+        /// <param name="dataBaseProduct">Product object in the DataBase.</param>
+        public void DeleteProduct(Product dataBaseProduct)
+        {
+            if (dataBaseProduct == null)
+                throw new ArgumentNullException(nameof(dataBaseProduct));
+
+            dbContext.Products.Remove(dataBaseProduct);
+
+            dbContext.SaveChanges();
         }
     }
 }

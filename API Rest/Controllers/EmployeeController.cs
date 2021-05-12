@@ -7,6 +7,9 @@ using Tarea_4;
 using Tarea_4.BackEnd;
 using Tarea_4.DataAccess;
 using Tarea_4.Models;
+using Tarea_4.ActionFilters;
+using Tarea_4.ExceptionHandling;
+using Microsoft.Data.SqlClient;
 
 namespace API_Rest.Controllers
 {
@@ -14,13 +17,6 @@ namespace API_Rest.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        private IActionResult InternalServerError(string errorMessage = "")
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, errorMessage);
-        }
-
-        private readonly string InstanceName = "employee";
-
         // GET api/<EmployeeController>/{id}
         [HttpGet("{id}")]
         public IActionResult Get(int id)
@@ -28,10 +24,11 @@ namespace API_Rest.Controllers
             if (id < 1)
                 return BadRequest($"{nameof(id)} must be at least 1.");
 
+            // Get Employee from Database
             Employee dbEmployee = new EmployeeSC().GetEmployeeById(id);
 
             if (dbEmployee == null)
-                return NotFound(DbExceptionMessages.InstanceNotFound(InstanceName, id));
+                return NotFound();
 
             EmployeePersonalInfoDTO employee = new(dbEmployee);
 
@@ -48,12 +45,15 @@ namespace API_Rest.Controllers
             if (requestedPage < 1)
                 return BadRequest($"{nameof(requestedPage)} must be at least 1.");
 
+            // Calculate Pages
             int lastPage = new EmployeeSC().CalculateLastPage(elementsPerPage);
             Pagination<EmployeePersonalInfoDTO> response = new(requestedPage, lastPage);
 
+            // Get Selected Page
             IQueryable<Employee> dbEmployees = new EmployeeSC().GetPage(elementsPerPage, response.CurrentPage);
             List<EmployeePersonalInfoDTO> employees = EmployeeSC.MaterializeIQueryable<EmployeePersonalInfoDTO>(dbEmployees);
 
+            // Attach elements of the page to the response
             response.ResponseList = employees;
 
             return Ok(response);
@@ -82,28 +82,26 @@ namespace API_Rest.Controllers
             }
             catch(Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return Conflict(ex.InnerException.Message);
-            }
-            catch(Exception ex) when (ExceptionTypes.IsDbException(ex))
-            {
-                return InternalServerError();
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if (message != null)
+                    return Conflict(message);
+
+                throw;
             }
 
-            //return Created(id);
-            return Ok(id);
+            return Created("GET " + Request.Path.Value + "/" + id, id);
         }
 
         // PUT api/<EmployeeController>/{id}
         [HttpPut("{id}")]
+        [EmployeePersonalInfo_EnsureMatchingIds]
         public IActionResult Put(int id, [FromBody] EmployeePersonalInfoDTO modifiedEmployee)
-        {
-            if (modifiedEmployee.Id != id)
-                return BadRequest($"{nameof(id)} and {nameof(modifiedEmployee.Id)} must have the same value.");
-            
+        {   
             Employee dataBaseEmployee = new EmployeeSC().GetEmployeeById(id);
 
             if (dataBaseEmployee == null)
-                return NotFound(DbExceptionMessages.InstanceNotFound(InstanceName, id));
+                return NotFound();
 
             try
             {
@@ -112,11 +110,12 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return Conflict(ex.InnerException.Message);
-            }
-            catch (Exception ex) when (ExceptionTypes.IsDbException(ex))
-            {
-                return InternalServerError();
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if(message != null)
+                    return Conflict(message);
+
+                throw;
             }
 
             return NoContent();
@@ -129,7 +128,7 @@ namespace API_Rest.Controllers
             Employee dataBaseEmployee = new EmployeeSC().GetEmployeeById(id);
 
             if (dataBaseEmployee == null)
-                return NotFound(DbExceptionMessages.InstanceNotFound(InstanceName, id));
+                return NotFound();
 
             try
             {
@@ -137,14 +136,14 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return Conflict(ex.InnerException.Message);
-            }
-            catch (Exception ex) when (ExceptionTypes.IsDbException(ex))
-            {
-                return InternalServerError();
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if (message != null)
+                    return Conflict(message);
+
+                throw;
             }
 
-            //return Deleted();
             return NoContent();
         }
     }

@@ -1,12 +1,20 @@
-﻿using Tarea_4.DataAccess;
+﻿using System.ComponentModel.DataAnnotations;
+using Tarea_4.DataAccess;
 
 namespace Tarea_4.Models
 {
     public class EmployeeContactInfoDTO : EmployeeDTO
     {
+        [StringLength(60)]
         public string HomeAddress { get; set; }
+
+        [StringLength(15)]
         public string HomeCity { get; set; }
+
+        [StringLength(15)]
         public string Countryland { get; set; }
+
+        [StringLength(24)]
         public string PhoneNumber { get; set; }
 
         public EmployeeContactInfoDTO()

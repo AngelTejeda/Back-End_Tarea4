@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Tarea_4;
 using Tarea_4.BackEnd;
 using Tarea_4.DataAccess;
 using Tarea_4.Models;
+using Tarea_4.ActionFilters;
+using Tarea_4.ExceptionHandling;
+using Microsoft.Data.SqlClient;
 
 namespace API_Rest.Controllers
 {
@@ -14,51 +17,57 @@ namespace API_Rest.Controllers
     [ApiController]
     public class ProductController : ControllerBase
     {
-        private IActionResult InternalServerError(Exception ex)
+        // GET api/<ProductController>/{id}
+        [HttpGet("{id}")]
+        public IActionResult Get(int id)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            if (id < 1)
+                return BadRequest($"{nameof(id)} must be at least 1.");
+
+            // Get Product from Database
+            Product dbProduct = new ProductSC().GetProductById(id);
+
+            if (dbProduct == null)
+                return NotFound();
+
+            ProductBasicInfoDTO product = new(dbProduct);
+
+            return Ok(product);
+        }
+
+        // GET: api/<ProductController>/page/{page}
+        [HttpGet]
+        [Route("pages/{requestedPage}")]
+        public IActionResult GetPage(int requestedPage)
+        {
+            const int elementsPerPage = 10;
+
+            if (requestedPage < 1)
+                return BadRequest($"{nameof(requestedPage)} must be at least 1.");
+
+            // Calculate Pages
+            int lastPage = new ProductSC().CalculateLastPage(elementsPerPage);
+            Pagination<ProductBasicInfoDTO> response = new(requestedPage, lastPage);
+
+            // Get Selected Page
+            IQueryable<Product> dbProducts = new ProductSC().GetPage(elementsPerPage, response.CurrentPage);
+            List<ProductBasicInfoDTO> products = ProductSC.MaterializeIQueryable<ProductBasicInfoDTO>(dbProducts);
+
+            // Attach elements of the page to the response
+            response.ResponseList = products;
+
+            return Ok(response);
         }
 
         // GET: api/<ProductController>
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult GetAll()
         {
-            List<ProductBasicInfoDTO> products = new();
+            IQueryable<Product> dbProducts = new ProductSC().GetAllProducts();
 
-            using (NorthwindContext dbContext = new())
-            {
-                IQueryable<Product> dbProducts = ProductSC.GetAllProducts(dbContext).AsNoTracking();
-
-                foreach (Product dbProduct in dbProducts)
-                {
-                    products.Add(new ProductBasicInfoDTO(dbProduct));
-                };
-            }
+            List<ProductBasicInfoDTO> products = ProductSC.MaterializeIQueryable<ProductBasicInfoDTO>(dbProducts);
 
             return Ok(products);
-        }
-
-        // GET api/<ProductController>/5
-        [HttpGet("{id}")]
-        public IActionResult Get(int id)
-        {
-            try
-            {
-                ProductBasicInfoDTO product;
-
-                using (NorthwindContext dbContext = new())
-                {
-                    Product dbProduct = ProductSC.GetProductById(dbContext, id);
-
-                    product = new(dbProduct);
-                }
-
-                return Ok(product);
-            }
-            catch (Exception ex)
-            {
-                return InternalServerError(ex);
-            }
         }
 
         // POST api/<ProductController>
@@ -69,55 +78,73 @@ namespace API_Rest.Controllers
 
             try
             {
-                using (NorthwindContext dbContext = new())
-                {
-                    id = ProductSC.AddNewProduct(dbContext, newProduct);
-                }
-
-                return Ok("Registered Id: " + id);
+                id = new ProductSC().AddNewProduct(newProduct);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return InternalServerError(ex);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if (message != null)
+                    return Conflict(message);
+
+                throw;
             }
+
+            return Created("GET " + Request.Path.Value + "/" + id, id);
         }
 
-        // PUT api/<ProductController>/5
+        // PUT api/<ProductController>/{id}
         [HttpPut("{id}")]
+        //[ProductPersonalInfo_EnsureMatchingIds]
         public IActionResult Put(int id, [FromBody] ProductBasicInfoDTO modifiedProduct)
         {
+            Product dataBaseProduct = new ProductSC().GetProductById(id);
+
+            if (dataBaseProduct == null)
+                return NotFound();
+
             try
             {
-                using (NorthwindContext dbContext = new())
-                {
-                    ProductSC.UpdateProduct(dbContext, id, modifiedProduct);
-                }
-
-                return Ok();
+                //TODO: Check if it is possible to pass the dataBaseProduct insted of the id.
+                new ProductSC().UpdateProduct(id, modifiedProduct);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return InternalServerError(ex);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if (message != null)
+                    return Conflict(message);
+
+                throw;
             }
+
+            return NoContent();
         }
 
-        // DELETE api/<ProductController>/5
+        // DELETE api/<ProductController>/{id}
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
+            Product dataBaseProduct = new ProductSC().GetProductById(id);
+
+            if (dataBaseProduct == null)
+                return NotFound();
+
             try
             {
-                using (NorthwindContext dbContext = new())
-                {
-                    ProductSC.DeleteProduct(dbContext, id);
-                }
-
-                return Ok();
+                new ProductSC().DeleteProduct(dataBaseProduct);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                return InternalServerError(ex);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+
+                if (message != null)
+                    return Conflict(message);
+
+                throw;
             }
+
+            return NoContent();
         }
     }
 }
