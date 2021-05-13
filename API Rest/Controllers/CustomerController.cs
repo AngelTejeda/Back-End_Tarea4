@@ -1,15 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Tarea_4;
 using Tarea_4.BackEnd;
 using Tarea_4.DataAccess;
-using Tarea_4.Models;
-using Tarea_4.ActionFilters;
 using Tarea_4.ExceptionHandling;
-using Microsoft.Data.SqlClient;
+using Tarea_4.Models;
 
 namespace API_Rest.Controllers
 {
@@ -48,7 +45,7 @@ namespace API_Rest.Controllers
 
             // Get Selected Page
             IQueryable<Customer> dbCustomers = new CustomerSC().GetPage(elementsPerPage, response.CurrentPage);
-            List<CustomerContactInfoDTO> customers = CustomerSC.MaterializeIQueryable<CustomerContactInfoDTO>(dbCustomers);
+            List<CustomerContactInfoDTO> customers = BaseSC.MaterializeIQueryable<Customer, CustomerContactInfoDTO>(dbCustomers);
 
             // Attach elements of the page to the response
             response.ResponseList = customers;
@@ -62,14 +59,14 @@ namespace API_Rest.Controllers
         {
             IQueryable<Customer> dbCustomers = new CustomerSC().GetAllCustomers();
 
-            List<CustomerContactInfoDTO> customers = CustomerSC.MaterializeIQueryable<CustomerContactInfoDTO>(dbCustomers);
+            List<CustomerContactInfoDTO> customers = BaseSC.MaterializeIQueryable<Customer, CustomerContactInfoDTO>(dbCustomers);
 
             return Ok(customers);
         }
 
         // POST api/<CustomerController>
         [HttpPost]
-        public IActionResult Post([FromBody] CustomerContactInfoDTO newCustomer)
+        public IActionResult Post([FromBody] CustomerContactInfoPostDTO newCustomer)
         {
             string id;
 
@@ -79,7 +76,7 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex.InnerException as SqlException);
 
                 if (message != null)
                     return Conflict(message);
@@ -92,8 +89,7 @@ namespace API_Rest.Controllers
 
         // PUT api/<CustomerController>/{id}
         [HttpPut("{id}")]
-        //[CustomerPersonalInfo_EnsureMatchingIds]
-        public IActionResult Put(string id, [FromBody] CustomerContactInfoDTO modifiedCustomer)
+        public IActionResult Put(string id, [FromBody] CustomerContactInfoPutDTO modifiedCustomer)
         {
             Customer dataBaseCustomer = new CustomerSC().GetCustomerById(id);
 
@@ -107,7 +103,7 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex.InnerException as SqlException);
 
                 if (message != null)
                     return Conflict(message);
@@ -133,7 +129,7 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex.InnerException as SqlException);
 
                 if (message != null)
                     return Conflict(message);

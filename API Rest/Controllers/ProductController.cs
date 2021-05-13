@@ -1,15 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Tarea_4;
 using Tarea_4.BackEnd;
 using Tarea_4.DataAccess;
-using Tarea_4.Models;
-using Tarea_4.ActionFilters;
 using Tarea_4.ExceptionHandling;
-using Microsoft.Data.SqlClient;
+using Tarea_4.Models;
 
 namespace API_Rest.Controllers
 {
@@ -51,7 +48,7 @@ namespace API_Rest.Controllers
 
             // Get Selected Page
             IQueryable<Product> dbProducts = new ProductSC().GetPage(elementsPerPage, response.CurrentPage);
-            List<ProductBasicInfoDTO> products = ProductSC.MaterializeIQueryable<ProductBasicInfoDTO>(dbProducts);
+            List<ProductBasicInfoDTO> products = BaseSC.MaterializeIQueryable<Product, ProductBasicInfoDTO>(dbProducts);
 
             // Attach elements of the page to the response
             response.ResponseList = products;
@@ -65,14 +62,14 @@ namespace API_Rest.Controllers
         {
             IQueryable<Product> dbProducts = new ProductSC().GetAllProducts();
 
-            List<ProductBasicInfoDTO> products = ProductSC.MaterializeIQueryable<ProductBasicInfoDTO>(dbProducts);
+            List<ProductBasicInfoDTO> products = BaseSC.MaterializeIQueryable<Product, ProductBasicInfoDTO>(dbProducts);
 
             return Ok(products);
         }
 
         // POST api/<ProductController>
         [HttpPost]
-        public IActionResult Post([FromBody] ProductBasicInfoDTO newProduct)
+        public IActionResult Post([FromBody] ProductBasicInfoPostPutDTO newProduct)
         {
             int id;
 
@@ -82,7 +79,7 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex.InnerException as SqlException);
 
                 if (message != null)
                     return Conflict(message);
@@ -95,8 +92,7 @@ namespace API_Rest.Controllers
 
         // PUT api/<ProductController>/{id}
         [HttpPut("{id}")]
-        //[ProductPersonalInfo_EnsureMatchingIds]
-        public IActionResult Put(int id, [FromBody] ProductBasicInfoDTO modifiedProduct)
+        public IActionResult Put(int id, [FromBody] ProductBasicInfoPostPutDTO modifiedProduct)
         {
             Product dataBaseProduct = new ProductSC().GetProductById(id);
 
@@ -110,7 +106,7 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex.InnerException as SqlException);
 
                 if (message != null)
                     return Conflict(message);
@@ -136,7 +132,7 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex.InnerException as SqlException);
 
                 if (message != null)
                     return Conflict(message);

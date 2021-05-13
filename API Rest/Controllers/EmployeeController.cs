@@ -1,15 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Tarea_4;
 using Tarea_4.BackEnd;
 using Tarea_4.DataAccess;
-using Tarea_4.Models;
-using Tarea_4.ActionFilters;
 using Tarea_4.ExceptionHandling;
-using Microsoft.Data.SqlClient;
+using Tarea_4.Models;
 
 namespace API_Rest.Controllers
 {
@@ -51,7 +48,7 @@ namespace API_Rest.Controllers
 
             // Get Selected Page
             IQueryable<Employee> dbEmployees = new EmployeeSC().GetPage(elementsPerPage, response.CurrentPage);
-            List<EmployeePersonalInfoDTO> employees = EmployeeSC.MaterializeIQueryable<EmployeePersonalInfoDTO>(dbEmployees);
+            List<EmployeePersonalInfoDTO> employees = BaseSC.MaterializeIQueryable<Employee, EmployeePersonalInfoDTO>(dbEmployees);
 
             // Attach elements of the page to the response
             response.ResponseList = employees;
@@ -65,24 +62,24 @@ namespace API_Rest.Controllers
         {
             IQueryable<Employee> dbEmployees = new EmployeeSC().GetAllEmployees();
 
-            List<EmployeePersonalInfoDTO> employees = EmployeeSC.MaterializeIQueryable<EmployeePersonalInfoDTO>(dbEmployees);
+            List<EmployeePersonalInfoDTO> employees = BaseSC.MaterializeIQueryable<Employee, EmployeePersonalInfoDTO>(dbEmployees);
 
             return Ok(employees);
         }
 
         // POST api/<EmployeeController>
         [HttpPost]
-        public IActionResult Post([FromBody] EmployeePersonalInfoDTO newEmployee)
+        public IActionResult Post([FromBody] EmployePersonalInfoPostPutDTO newEmployee)
         {
             int id;
-            
+
             try
             {
                 id = new EmployeeSC().AddNewEmployee(newEmployee);
             }
-            catch(Exception ex) when (ExceptionTypes.IsSqlException(ex))
+            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex.InnerException as SqlException);
 
                 if (message != null)
                     return Conflict(message);
@@ -95,9 +92,8 @@ namespace API_Rest.Controllers
 
         // PUT api/<EmployeeController>/{id}
         [HttpPut("{id}")]
-        [EmployeePersonalInfo_EnsureMatchingIds]
-        public IActionResult Put(int id, [FromBody] EmployeePersonalInfoDTO modifiedEmployee)
-        {   
+        public IActionResult Put(int id, [FromBody] EmployePersonalInfoPostPutDTO modifiedEmployee)
+        {
             Employee dataBaseEmployee = new EmployeeSC().GetEmployeeById(id);
 
             if (dataBaseEmployee == null)
@@ -108,11 +104,11 @@ namespace API_Rest.Controllers
                 //TODO: Check if it is possible to pass the dataBaseEmployee insted of the id.
                 new EmployeeSC().UpdateEmployee(id, modifiedEmployee);
             }
-            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
+            catch (Exception ex) when (ExceptionTypes.IsSqlException(ex.InnerException))
             {
                 string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
 
-                if(message != null)
+                if (message != null)
                     return Conflict(message);
 
                 throw;
@@ -136,7 +132,7 @@ namespace API_Rest.Controllers
             }
             catch (Exception ex) when (ExceptionTypes.IsSqlException(ex))
             {
-                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex as SqlException);
+                string message = SqlExceptionMessages.GetCustomSqlExceptionMessage(ex.InnerException as SqlException);
 
                 if (message != null)
                     return Conflict(message);

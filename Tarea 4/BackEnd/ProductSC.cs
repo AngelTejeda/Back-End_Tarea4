@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Tarea_4.DataAccess;
@@ -9,29 +8,6 @@ namespace Tarea_4.BackEnd
 {
     public class ProductSC : BaseSC
     {
-        /// <summary>
-        /// Materializes a given IQueryable of products into a List.
-        /// </summary>
-        /// <typeparam name="T"> A Data Transfer Object Class of the products.</typeparam>
-        /// <param name="dataBaseProducts">IQueryable object of the products that will be materialized.</param>
-        /// <returns>A List<typeparamref name="T"/> with the materialized products.</returns>
-        public static List<T> MaterializeIQueryable<T>(IQueryable<Product> dataBaseProducts) where T : ProductDTO, new()
-        {
-            List<T> products = new();
-
-            dataBaseProducts = dataBaseProducts.AsNoTracking();
-
-            foreach (Product dbProduct in dataBaseProducts)
-            {
-                T dtoObject = new();
-                dtoObject.CopyInfoFromDataBaseProduct(dbProduct);
-
-                products.Add(dtoObject);
-            };
-
-            return products;
-        }
-
         /// <summary>
         /// Returns the total amount of products in the DataBase.
         /// </summary>
@@ -98,12 +74,12 @@ namespace Tarea_4.BackEnd
         /// </summary>
         /// <param name="newProduct">Model of the product being registered.</param>
         /// <returns>The id of the registered product.</returns>
-        public int AddNewProduct(ProductDTO newProduct)
+        public int AddNewProduct(IAddible<Product> newProduct)
         {
             if (newProduct == null)
                 throw new ArgumentNullException(nameof(newProduct));
 
-            Product dataBaseProduct = newProduct.GetDataBaseProductObject();
+            Product dataBaseProduct = newProduct.GetDataBaseObject();
 
             dbContext.Products.Add(dataBaseProduct);
             dbContext.SaveChanges();
@@ -116,7 +92,7 @@ namespace Tarea_4.BackEnd
         /// </summary>
         /// <param name="id">Id of the product being modified.</param>
         /// <param name="modifiedProduct">Model with the new information of the product.</param>
-        public void UpdateProduct(int id, ProductDTO modifiedProduct)
+        public void UpdateProduct(int id, IUpdatable<Product> modifiedProduct)
         {
             if (modifiedProduct == null)
                 throw new ArgumentNullException(nameof(modifiedProduct));
@@ -126,7 +102,7 @@ namespace Tarea_4.BackEnd
             if (dataBaseProduct == null)
                 throw new KeyNotFoundException();
 
-            modifiedProduct.ModifyDataBaseProduct(dataBaseProduct);
+            modifiedProduct.ModifyDataBaseObject(dataBaseProduct);
 
             dbContext.SaveChanges();
         }
@@ -136,7 +112,7 @@ namespace Tarea_4.BackEnd
         /// </summary>
         /// <param name="dataBaseProduct">Product object in the DataBase.</param>
         /// <param name="modifiedProduct">Model with the new information of the product.</param>
-        public void UpdateProduct(Product dataBaseProduct, ProductDTO modifiedProduct)
+        public void UpdateProduct(Product dataBaseProduct, IUpdatable<Product> modifiedProduct)
         {
             if (dataBaseProduct == null)
                 throw new ArgumentNullException(nameof(dataBaseProduct));
@@ -144,7 +120,7 @@ namespace Tarea_4.BackEnd
             if (modifiedProduct == null)
                 throw new ArgumentNullException(nameof(modifiedProduct));
 
-            modifiedProduct.ModifyDataBaseProduct(dataBaseProduct);
+            modifiedProduct.ModifyDataBaseObject(dataBaseProduct);
 
             dbContext.SaveChanges();
         }

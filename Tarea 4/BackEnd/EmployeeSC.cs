@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Tarea_4.DataAccess;
@@ -9,29 +8,6 @@ namespace Tarea_4.BackEnd
 {
     public class EmployeeSC : BaseSC
     {
-        /// <summary>
-        /// Materializes a given IQueryable of employees into a List.
-        /// </summary>
-        /// <typeparam name="T"> A Data Transfer Object Class of the employees.</typeparam>
-        /// <param name="dataBaseEmployees">IQueryable object of the employees that will be materialized.</param>
-        /// <returns>A List<typeparamref name="T"/> with the materialized employees.</returns>
-        public static List<T> MaterializeIQueryable<T>(IQueryable<Employee> dataBaseEmployees) where T : EmployeeDTO, new()
-        {
-            List<T> employees = new();
-
-            dataBaseEmployees = dataBaseEmployees.AsNoTracking();
-
-            foreach (Employee dbEmployee in dataBaseEmployees)
-            {
-                T dtoObject = new();
-                dtoObject.CopyInfoFromDataBaseEmployee(dbEmployee);
-
-                employees.Add(dtoObject);
-            };
-
-            return employees;
-        }
-
         /// <summary>
         /// Returns the total amount of employees in the DataBase.
         /// </summary>
@@ -90,7 +66,7 @@ namespace Tarea_4.BackEnd
         /// </summary>
         public IQueryable<Employee> GetAllEmployees()
         {
-            return dbContext.Employees.AsQueryable();            
+            return dbContext.Employees.AsQueryable();
         }
 
         /// <summary>
@@ -98,12 +74,12 @@ namespace Tarea_4.BackEnd
         /// </summary>
         /// <param name="newEmployee">Model of the employee being registered.</param>
         /// <returns>The id of the registered employee.</returns>
-        public int AddNewEmployee(EmployeeDTO newEmployee)
+        public int AddNewEmployee<T>(T newEmployee) where T : IAddible<Employee>
         {
             if (newEmployee == null)
                 throw new ArgumentNullException(nameof(newEmployee));
 
-            Employee dataBaseEmployee = newEmployee.GetDataBaseEmployeeObject();
+            Employee dataBaseEmployee = newEmployee.GetDataBaseObject();
 
             dbContext.Employees.Add(dataBaseEmployee);
             dbContext.SaveChanges();
@@ -116,7 +92,7 @@ namespace Tarea_4.BackEnd
         /// </summary>
         /// <param name="id">Id of the employee being modified.</param>
         /// <param name="modifiedEmployee">Model with the new information of the employee.</param>
-        public void UpdateEmployee(int id, EmployeeDTO modifiedEmployee)
+        public void UpdateEmployee<T>(int id, T modifiedEmployee) where T : IUpdatable<Employee>
         {
             if (modifiedEmployee == null)
                 throw new ArgumentNullException(nameof(modifiedEmployee));
@@ -126,7 +102,7 @@ namespace Tarea_4.BackEnd
             if (dataBaseEmployee == null)
                 throw new KeyNotFoundException();
 
-            modifiedEmployee.ModifyDataBaseEmployee(dataBaseEmployee);
+            modifiedEmployee.ModifyDataBaseObject(dataBaseEmployee);
 
             dbContext.SaveChanges();
         }
@@ -136,7 +112,7 @@ namespace Tarea_4.BackEnd
         /// </summary>
         /// <param name="dataBaseEmployee">Employee object in the DataBase.</param>
         /// <param name="modifiedEmployee">Model with the new information of the employee.</param>
-        public void UpdateEmployee(Employee dataBaseEmployee, EmployeeDTO modifiedEmployee)
+        public void UpdateEmployee<T>(Employee dataBaseEmployee, T modifiedEmployee) where T : IUpdatable<Employee>
         {
             if (dataBaseEmployee == null)
                 throw new ArgumentNullException(nameof(dataBaseEmployee));
@@ -144,7 +120,7 @@ namespace Tarea_4.BackEnd
             if (modifiedEmployee == null)
                 throw new ArgumentNullException(nameof(modifiedEmployee));
 
-            modifiedEmployee.ModifyDataBaseEmployee(dataBaseEmployee);
+            modifiedEmployee.ModifyDataBaseObject(dataBaseEmployee);
 
             dbContext.SaveChanges();
         }

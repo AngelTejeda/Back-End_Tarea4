@@ -1,13 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Tarea_4.DataAccess;
+﻿using Tarea_4.DataAccess;
 
 namespace Tarea_4.Models
 {
-    public class EmployeePersonalInfoDTO : EmployeeDTO
+    public class EmployeePersonalInfoDTO : IReadable<Employee>
     {
         public int Id { get; set; }
-
-        [StringLength(60)]
+        public string Name { get; set; }
+        public string FamilyName { get; set; }
         public string HomeAddress { get; set; }
 
         public EmployeePersonalInfoDTO()
@@ -17,34 +16,15 @@ namespace Tarea_4.Models
 
         public EmployeePersonalInfoDTO(Employee dataBaseEmployee)
         {
-            CopyInfoFromDataBaseEmployee(dataBaseEmployee);
+            CopyInfoFromDataBaseObject(dataBaseEmployee);
         }
 
-        public override Employee GetDataBaseEmployeeObject()
+        public void CopyInfoFromDataBaseObject(Employee dataBaseObject)
         {
-            return new Employee()
-            {
-                FirstName = Name,
-                LastName = FamilyName,
-                EmployeeId = Id,
-                Address = HomeAddress
-            };
-        }
-
-        public override void ModifyDataBaseEmployee(Employee dataBaseEmployee)
-        {
-            dataBaseEmployee.FirstName = Name;
-            dataBaseEmployee.LastName = FamilyName;
-            dataBaseEmployee.EmployeeId = Id;
-            dataBaseEmployee.Address = HomeAddress;
-        }
-
-        public override void CopyInfoFromDataBaseEmployee(Employee dataBaseEmployee)
-        {
-            Name = dataBaseEmployee.FirstName;
-            FamilyName = dataBaseEmployee.LastName;
-            Id = dataBaseEmployee.EmployeeId;
-            HomeAddress = dataBaseEmployee.Address;
+            Id = dataBaseObject.EmployeeId;
+            Name = dataBaseObject.FirstName;
+            FamilyName = dataBaseObject.LastName;
+            HomeAddress = dataBaseObject.Address;
         }
     }
 }

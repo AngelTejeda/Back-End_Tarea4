@@ -1,9 +1,12 @@
-﻿using Tarea_4.DataAccess;
+﻿using System.ComponentModel.DataAnnotations;
+using Tarea_4.DataAccess;
 
 namespace Tarea_4.Models
 {
-    public class CustomerContactInfoDTO : CustomerDTO
+    public class CustomerContactInfoDTO : IReadable<Customer>
     {
+        public string Id { get; set; }
+        public string Company { get; set; }
         public string ContactFullName { get; set; }
         public string ContactPosition { get; set; }
         public string ContactPhone { get; set; }
@@ -15,37 +18,16 @@ namespace Tarea_4.Models
 
         public CustomerContactInfoDTO(Customer dataBaseCustomer)
         {
-            CopyInfoFromDataBaseCustomer(dataBaseCustomer);
+            CopyInfoFromDataBaseObject(dataBaseCustomer);
         }
 
-        public override Customer GetDataBaseCustomerObject()
+        public void CopyInfoFromDataBaseObject(Customer dataBaseObject)
         {
-            return new Customer()
-            {
-                CustomerId = Id,
-                CompanyName = Company,
-                ContactName = ContactFullName,
-                ContactTitle = ContactPosition,
-                Phone = ContactPhone
-        };
-        }
-
-        public override void ModifyDataBaseCustomer(Customer dataBaseCustomer)
-        {
-            dataBaseCustomer.CustomerId = Id;
-            dataBaseCustomer.CompanyName = Company;
-            dataBaseCustomer.ContactName = ContactFullName;
-            dataBaseCustomer.ContactTitle = ContactPosition;
-            dataBaseCustomer.Phone = ContactPhone;
-        }
-
-        public override void CopyInfoFromDataBaseCustomer(Customer dataBaseCustomer)
-        {
-            Id = dataBaseCustomer.CustomerId;
-            Company = dataBaseCustomer.CompanyName;
-            ContactFullName = dataBaseCustomer.ContactName;
-            ContactPosition = dataBaseCustomer.ContactTitle;
-            ContactPhone = dataBaseCustomer.Phone;
+            Id = dataBaseObject.CustomerId;
+            Company = dataBaseObject.CompanyName;
+            ContactFullName = dataBaseObject.ContactName;
+            ContactPosition = dataBaseObject.ContactTitle;
+            ContactPhone = dataBaseObject.Phone;
         }
     }
 }
