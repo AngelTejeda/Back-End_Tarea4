@@ -35,9 +35,7 @@ namespace Tarea_4.BackEnd
         public int CalculateLastPage(int elementsPerPage)
         {
             int totalElements = CountEmployees();
-            int lastPage = Convert.ToInt32(Math.Ceiling((double)totalElements / elementsPerPage));
-
-            return lastPage;
+            return BaseSC.CalculateLastPage(totalElements, elementsPerPage);
         }
 
         /// <summary>
@@ -50,15 +48,7 @@ namespace Tarea_4.BackEnd
         /// <returns>An IQueryable with the selected employees.</returns>
         public IQueryable<Employee> GetPage(int elementsPerPage, int page)
         {
-            if (elementsPerPage <= 0)
-                throw new ArgumentOutOfRangeException(nameof(elementsPerPage));
-
-            if (page <= 0)
-                throw new ArgumentOutOfRangeException(nameof(page));
-
-            return GetAllEmployees()
-                .Skip((page - 1) * elementsPerPage)
-                .Take(elementsPerPage);
+            return BaseSC.GetPage(GetAllEmployees(), elementsPerPage, page);
         }
 
         /// <summary>

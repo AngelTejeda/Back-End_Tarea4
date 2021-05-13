@@ -69,7 +69,7 @@ namespace API_Rest.Controllers
 
         // POST api/<EmployeeController>
         [HttpPost]
-        public IActionResult Post([FromBody] EmployePersonalInfoPostPutDTO newEmployee)
+        public IActionResult Post([FromBody] EmployePersonalInfoPostDTO newEmployee)
         {
             int id;
 
@@ -92,7 +92,7 @@ namespace API_Rest.Controllers
 
         // PUT api/<EmployeeController>/{id}
         [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody] EmployePersonalInfoPostPutDTO modifiedEmployee)
+        public IActionResult Put(int id, [FromBody] EmployePersonalInfoPutDTO modifiedEmployee)
         {
             Employee dataBaseEmployee = new EmployeeSC().GetEmployeeById(id);
 

@@ -10,10 +10,6 @@ namespace Tarea_4.Models
         public int LastPage { get; set; }
         public List<T> ResponseList { get; set; }
 
-        public Pagination()
-        {
-
-        }
 
         public Pagination(int page, int lastPage)
         {

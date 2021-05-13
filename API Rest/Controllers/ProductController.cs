@@ -69,7 +69,7 @@ namespace API_Rest.Controllers
 
         // POST api/<ProductController>
         [HttpPost]
-        public IActionResult Post([FromBody] ProductBasicInfoPostPutDTO newProduct)
+        public IActionResult Post([FromBody] ProductBasicInfoPostDTO newProduct)
         {
             int id;
 
@@ -92,7 +92,7 @@ namespace API_Rest.Controllers
 
         // PUT api/<ProductController>/{id}
         [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody] ProductBasicInfoPostPutDTO modifiedProduct)
+        public IActionResult Put(int id, [FromBody] ProductBasicInfoPutDTO modifiedProduct)
         {
             Product dataBaseProduct = new ProductSC().GetProductById(id);
 
