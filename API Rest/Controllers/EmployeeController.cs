@@ -46,8 +46,11 @@ namespace API_Rest.Controllers
             int lastPage = new EmployeeSC().CalculateLastPage(elementsPerPage);
             Pagination<EmployeePersonalInfoDTO> response = new(requestedPage, lastPage);
 
+            if (lastPage == 0)
+                return Ok(response);
+
             // Get Selected Page
-            IQueryable<Employee> dbEmployees = new EmployeeSC().GetPage(elementsPerPage, response.CurrentPage);
+            IQueryable<Employee> dbEmployees = new EmployeeSC().GetPage(elementsPerPage, (int)response.CurrentPage);
             List<EmployeePersonalInfoDTO> employees = BaseSC.MaterializeIQueryable<Employee, EmployeePersonalInfoDTO>(dbEmployees);
 
             // Attach elements of the page to the response

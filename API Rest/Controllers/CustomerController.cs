@@ -43,8 +43,11 @@ namespace API_Rest.Controllers
             int lastPage = new CustomerSC().CalculateLastPage(elementsPerPage);
             Pagination<CustomerContactInfoDTO> response = new(requestedPage, lastPage);
 
+            if (lastPage == 0)
+                return Ok(response);
+
             // Get Selected Page
-            IQueryable<Customer> dbCustomers = new CustomerSC().GetPage(elementsPerPage, response.CurrentPage);
+            IQueryable<Customer> dbCustomers = new CustomerSC().GetPage(elementsPerPage, (int)response.CurrentPage);
             List<CustomerContactInfoDTO> customers = BaseSC.MaterializeIQueryable<Customer, CustomerContactInfoDTO>(dbCustomers);
 
             // Attach elements of the page to the response

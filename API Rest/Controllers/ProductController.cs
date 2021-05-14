@@ -46,8 +46,11 @@ namespace API_Rest.Controllers
             int lastPage = new ProductSC().CalculateLastPage(elementsPerPage);
             Pagination<ProductBasicInfoDTO> response = new(requestedPage, lastPage);
 
+            if (lastPage == 0)
+                return Ok(response);
+
             // Get Selected Page
-            IQueryable<Product> dbProducts = new ProductSC().GetPage(elementsPerPage, response.CurrentPage);
+            IQueryable<Product> dbProducts = new ProductSC().GetPage(elementsPerPage, (int)response.CurrentPage);
             List<ProductBasicInfoDTO> products = BaseSC.MaterializeIQueryable<Product, ProductBasicInfoDTO>(dbProducts);
 
             // Attach elements of the page to the response
